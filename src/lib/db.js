@@ -35,88 +35,215 @@ function enqueueWrite(fn) {
   });
 }
 
+// Supabase helpers to get and set the single-object store
+async function getFromSupabase() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+
+  try {
+    const cleanUrl = url.replace(/\/$/, '');
+    const res = await fetch(`${cleanUrl}/rest/v1/malathala_store?key=eq.db&select=value`, {
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`
+      },
+      cache: 'no-store'
+    });
+    if (!res.ok) {
+      if (res.status === 404) {
+        console.warn('Supabase: "malathala_store" table not found. Please create it in your Supabase SQL editor.');
+      }
+      return null;
+    }
+    const data = await res.json();
+    return data[0]?.value || null;
+  } catch (err) {
+    console.error('Supabase read error:', err.message);
+    return null;
+  }
+}
+
+async function setInSupabase(data) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return false;
+
+  try {
+    const cleanUrl = url.replace(/\/$/, '');
+    const res = await fetch(`${cleanUrl}/rest/v1/malathala_store`, {
+      method: 'POST',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ key: 'db', value: data })
+    });
+    if (!res.ok) {
+      // Attempt upsert fallback
+      const upsertRes = await fetch(`${cleanUrl}/rest/v1/malathala_store`, {
+        method: 'POST',
+        headers: {
+          'apikey': key,
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'upsert'
+        },
+        body: JSON.stringify({ key: 'db', value: data })
+      });
+      return upsertRes.ok;
+    }
+    return true;
+  } catch (err) {
+    console.error('Supabase write error:', err.message);
+    return false;
+  }
+}
+
 // Initialize database with pre-seeded data
 export async function initDb() {
+  const defaultDb = {
+    users: [
+      {
+        id: 'admin-uuid-0000-0000',
+        username: 'admin',
+        email: 'admin@malathala.urs.edu.ph',
+        password_hash: hashPassword('AdminSecurePassword2026!'),
+        role: 'admin',
+        status: 'approved',
+        fullName: 'Malathala Administrator',
+        category: 'Administration',
+        bio: 'System Administrator for MALATHALA visual arts portal.',
+        profilePicture: '/logo.png',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'artist-uuid-regine-santos',
+        username: 'regine',
+        email: 'regine@malathala.urs.edu.ph',
+        password_hash: hashPassword('artist123'),
+        role: 'artist',
+        status: 'approved',
+        fullName: 'Regine Santos',
+        category: 'Painting',
+        bio: 'Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.',
+        profilePicture: '/uploads/profiles/artist-avatar-1.png',
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 'artist-uuid-karl-mendoza',
+        username: 'karl',
+        email: 'karl@malathala.urs.edu.ph',
+        password_hash: hashPassword('artist123'),
+        role: 'artist',
+        status: 'approved',
+        fullName: 'Karl Mendoza',
+        category: 'Photography',
+        bio: 'Visual storyteller capturing the hidden textures and patterns of urban and rural life.',
+        profilePicture: '/uploads/profiles/artist-avatar-2.png',
+        createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString()
+      }
+    ],
+    artworks: [
+      {
+        id: 'art-uuid-painting-1',
+        userId: 'artist-uuid-regine-santos',
+        artistName: 'Regine Santos',
+        artistAvatar: '/uploads/profiles/artist-avatar-1.png',
+        title: 'Whispers of the Morong Church',
+        description: 'An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.',
+        category: 'Painting',
+        imagePath: '/uploads/artworks/seeding-painting-1.png',
+        createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
+        likes: 2,
+        likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
+        price: 18500
+      },
+      {
+        id: 'art-uuid-photography-1',
+        userId: 'artist-uuid-karl-mendoza',
+        artistName: 'Karl Mendoza',
+        artistAvatar: '/uploads/profiles/artist-avatar-2.png',
+        title: 'Echoes of the Sierra Madre',
+        description: 'A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.',
+        category: 'Photography',
+        imagePath: '/uploads/artworks/seeding-photo-1.png',
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+        likes: 1,
+        likedBy: ['admin-uuid-0000-0000'],
+        price: null
+      }
+    ]
+  };
+
+  // 1. Try Supabase Init
+  if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
+    try {
+      const data = await getFromSupabase();
+      if (!data) {
+        await setInSupabase(defaultDb);
+        console.log('Database initialized in Supabase with seed data.');
+      } else {
+        // Enforce presence of admin & seed data
+        let modified = false;
+        if (!data.users.find(u => u.username === 'admin')) {
+          data.users.push(defaultDb.users[0]);
+          modified = true;
+        }
+        if (!data.users.find(u => u.username === 'regine')) {
+          data.users.push(defaultDb.users[1]);
+          modified = true;
+        }
+        if (!data.users.find(u => u.username === 'karl')) {
+          data.users.push(defaultDb.users[2]);
+          modified = true;
+        }
+        if (data.artworks.length === 0) {
+          data.artworks.push(...defaultDb.artworks);
+          modified = true;
+        }
+        if (modified) {
+          await setInSupabase(data);
+          console.log('Seed users/artworks validated and merged into existing Supabase.');
+        }
+      }
+      return;
+    } catch (err) {
+      console.error('Failed to initialize database on Supabase:', err.message);
+    }
+  }
+
+  // 2. Try Vercel KV Init
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     try {
       const { kv } = require('@vercel/kv');
       const data = await kv.get('malathala_db');
       if (!data) {
-        const defaultDb = {
-          users: [
-            {
-              id: 'admin-uuid-0000-0000',
-              username: 'admin',
-              email: 'admin@malathala.urs.edu.ph',
-              password_hash: hashPassword('AdminSecurePassword2026!'),
-              role: 'admin',
-              status: 'approved',
-              fullName: 'Malathala Administrator',
-              category: 'Administration',
-              bio: 'System Administrator for MALATHALA visual arts portal.',
-              profilePicture: '/default-profile.png',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'artist-uuid-regine-santos',
-              username: 'regine',
-              email: 'regine@malathala.urs.edu.ph',
-              password_hash: hashPassword('artist123'),
-              role: 'artist',
-              status: 'approved',
-              fullName: 'Regine Santos',
-              category: 'Painting',
-              bio: 'Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.',
-              profilePicture: '/uploads/profiles/artist-avatar-1.png',
-              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-              id: 'artist-uuid-karl-mendoza',
-              username: 'karl',
-              email: 'karl@malathala.urs.edu.ph',
-              password_hash: hashPassword('artist123'),
-              role: 'artist',
-              status: 'approved',
-              fullName: 'Karl Mendoza',
-              category: 'Photography',
-              bio: 'Visual storyteller capturing the hidden textures and patterns of urban and rural life.',
-              profilePicture: '/uploads/profiles/artist-avatar-2.png',
-              createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString()
-            }
-          ],
-          artworks: [
-            {
-              id: 'art-uuid-painting-1',
-              userId: 'artist-uuid-regine-santos',
-              artistName: 'Regine Santos',
-              artistAvatar: '/uploads/profiles/artist-avatar-1.png',
-              title: 'Whispers of the Morong Church',
-              description: 'An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.',
-              category: 'Painting',
-              imagePath: '/uploads/artworks/seeding-painting-1.png',
-              createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
-              likes: 2,
-              likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
-              price: 18500
-            },
-            {
-              id: 'art-uuid-photography-1',
-              userId: 'artist-uuid-karl-mendoza',
-              artistName: 'Karl Mendoza',
-              artistAvatar: '/uploads/profiles/artist-avatar-2.png',
-              title: 'Echoes of the Sierra Madre',
-              description: 'A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.',
-              category: 'Photography',
-              imagePath: '/uploads/artworks/seeding-photo-1.png',
-              createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-              likes: 1,
-              likedBy: ['admin-uuid-0000-0000'],
-              price: null
-            }
-          ]
-        };
         await kv.set('malathala_db', defaultDb);
         console.log('Database initialized in Vercel KV with seed data.');
+      } else {
+        let modified = false;
+        if (!data.users.find(u => u.username === 'admin')) {
+          data.users.push(defaultDb.users[0]);
+          modified = true;
+        }
+        if (!data.users.find(u => u.username === 'regine')) {
+          data.users.push(defaultDb.users[1]);
+          modified = true;
+        }
+        if (!data.users.find(u => u.username === 'karl')) {
+          data.users.push(defaultDb.users[2]);
+          modified = true;
+        }
+        if (data.artworks.length === 0) {
+          data.artworks.push(...defaultDb.artworks);
+          modified = true;
+        }
+        if (modified) {
+          await kv.set('malathala_db', data);
+        }
       }
       return;
     } catch (err) {
@@ -124,120 +251,38 @@ export async function initDb() {
     }
   }
 
+  // 3. Fallback to Local Files Init
   const dir = path.dirname(DB_PATH);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const defaultDb = {
-    users: [],
-    artworks: []
-  };
-
-  // Pre-seed admin and test data
-  const adminUser = {
-    id: 'admin-uuid-0000-0000',
-    username: 'admin',
-    email: 'admin@malathala.urs.edu.ph',
-    password_hash: hashPassword('AdminSecurePassword2026!'),
-    role: 'admin',
-    status: 'approved',
-    fullName: 'Malathala Administrator',
-    category: 'Administration',
-    bio: 'System Administrator for MALATHALA visual arts portal.',
-    profilePicture: '/logo.png',
-    createdAt: new Date().toISOString()
-  };
-
-  const seedArtist1 = {
-    id: 'artist-uuid-regine-santos',
-    username: 'regine',
-    email: 'regine@malathala.urs.edu.ph',
-    password_hash: hashPassword('artist123'),
-    role: 'artist',
-    status: 'approved',
-    fullName: 'Regine Santos',
-    category: 'Painting',
-    bio: 'Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.',
-    profilePicture: '/uploads/profiles/artist-avatar-1.png',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
-  };
-
-  const seedArtist2 = {
-    id: 'artist-uuid-karl-mendoza',
-    username: 'karl',
-    email: 'karl@malathala.urs.edu.ph',
-    password_hash: hashPassword('artist123'),
-    role: 'artist',
-    status: 'approved',
-    fullName: 'Karl Mendoza',
-    category: 'Photography',
-    bio: 'Visual storyteller capturing the hidden textures and patterns of urban and rural life.',
-    profilePicture: '/uploads/profiles/artist-avatar-2.png',
-    createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString() // 23h ago
-  };
-
-  const seedArtwork1 = {
-    id: 'art-uuid-painting-1',
-    userId: 'artist-uuid-regine-santos',
-    artistName: 'Regine Santos',
-    artistAvatar: '/uploads/profiles/artist-avatar-1.png',
-    title: 'Whispers of the Morong Church',
-    description: 'An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.',
-    category: 'Painting',
-    imagePath: '/uploads/artworks/seeding-painting-1.png',
-    createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), // 10h ago
-    likes: 2,
-    likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
-    price: 18500
-  };
-
-  const seedArtwork2 = {
-    id: 'art-uuid-photography-1',
-    userId: 'artist-uuid-karl-mendoza',
-    artistName: 'Karl Mendoza',
-    artistAvatar: '/uploads/profiles/artist-avatar-2.png',
-    title: 'Echoes of the Sierra Madre',
-    description: 'A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.',
-    category: 'Photography',
-    imagePath: '/uploads/artworks/seeding-photo-1.png',
-    createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8h ago
-    likes: 1,
-    likedBy: ['admin-uuid-0000-0000'],
-    price: null
-  };
-
   if (!fs.existsSync(DB_PATH)) {
-    defaultDb.users.push(adminUser, seedArtist1, seedArtist2);
-    defaultDb.artworks.push(seedArtwork1, seedArtwork2);
     fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2), 'utf8');
-    console.log('Database initialized with admin and seed data.');
+    console.log('Database initialized with local files and seed data.');
   } else {
-    // If database exists, verify admin and seed users exist, if not insert them
     const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
     let modified = false;
 
     if (!data.users.find(u => u.username === 'admin')) {
-      data.users.push(adminUser);
+      data.users.push(defaultDb.users[0]);
       modified = true;
     }
     if (!data.users.find(u => u.username === 'regine')) {
-      data.users.push(seedArtist1);
+      data.users.push(defaultDb.users[1]);
       modified = true;
     }
     if (!data.users.find(u => u.username === 'karl')) {
-      data.users.push(seedArtist2);
+      data.users.push(defaultDb.users[2]);
       modified = true;
     }
-
     if (data.artworks.length === 0) {
-      data.artworks.push(seedArtwork1, seedArtwork2);
+      data.artworks.push(...defaultDb.artworks);
       modified = true;
     }
-
     if (modified) {
       fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
-      console.log('Seed users/artworks validated and merged into existing database.');
+      console.log('Seed users/artworks validated and merged into existing local database.');
     }
   }
 }
@@ -245,6 +290,14 @@ export async function initDb() {
 // Read database
 async function readDb() {
   await initDb();
+
+  // 1. Try Supabase
+  if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
+    const data = await getFromSupabase();
+    if (data) return data;
+  }
+
+  // 2. Try Vercel KV
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     try {
       const { kv } = require('@vercel/kv');
@@ -254,6 +307,8 @@ async function readDb() {
       console.error('Failed to read from KV:', err.message);
     }
   }
+
+  // 3. Fallback to Local Files
   try {
     const content = fs.readFileSync(DB_PATH, 'utf8');
     return JSON.parse(content);
@@ -263,16 +318,26 @@ async function readDb() {
   }
 }
 
-// Write database safely via queue
-function writeDb(data) {
+// Write database safely via queue / remote sync
+async function writeDb(data) {
+  // 1. Try Supabase
+  if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
+    const success = await setInSupabase(data);
+    if (success) return;
+  }
+
+  // 2. Try Vercel KV
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     try {
       const { kv } = require('@vercel/kv');
-      return kv.set('malathala_db', data);
+      await kv.set('malathala_db', data);
+      return;
     } catch (err) {
       console.error('Failed to write to KV:', err.message);
     }
   }
+
+  // 3. Fallback to Local Files
   return enqueueWrite(() => {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
   });
