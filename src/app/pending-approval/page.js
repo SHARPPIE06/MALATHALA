@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from '@/lib/auth'; // custom hook that returns current session (if you have one)
 
 export const metadata = {
   title: 'Pending Approval - MALATHALA Visual Artist Portal',
@@ -6,6 +8,16 @@ export const metadata = {
 };
 
 export default function PendingApprovalPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession(); // assumes a hook like SWR or next-auth
+
+  // If we already have a session and the user is approved, redirect immediately
+  useEffect(() => {
+    if (status === 'authenticated' && session?.status === 'approved') {
+      router.replace('/'); // send user to home/dashboard
+    }
+  }, [status, session, router]);
+
   return (
     <div className="container auth-wrapper fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
       <div className="auth-card glass-panel" style={{ maxWidth: '500px', textAlign: 'center', padding: '40px' }}>

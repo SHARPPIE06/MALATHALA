@@ -354,11 +354,8 @@ export async function initDb() {
     console.log('Seed users/artworks validated and merged into existing local database.');
   }
 }
-
 // Read database
 async function readDb() {
-  await initDb();
-
   // 1. Try Supabase
   if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
     const data = await getFromSupabase();
