@@ -36,7 +36,7 @@ export async function POST(request) {
     }
 
     // Check availability
-    const existingUser = getUserByUsername(username);
+    const existingUser = await getUserByUsername(username);
     if (existingUser) {
       return NextResponse.json(
         { error: 'Username is already taken' },
@@ -44,7 +44,7 @@ export async function POST(request) {
       );
     }
 
-    const existingEmail = getUserByEmail(email);
+    const existingEmail = await getUserByEmail(email);
     if (existingEmail) {
       return NextResponse.json(
         { error: 'Email is already registered' },

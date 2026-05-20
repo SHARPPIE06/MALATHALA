@@ -11,7 +11,7 @@ export async function GET(request) {
     const artistId = searchParams.get('artistId');
     const search = searchParams.get('search')?.toLowerCase();
 
-    let artworks = getAllArtworks();
+    let artworks = await getAllArtworks();
 
     // Filter by artist
     if (artistId) {
@@ -52,7 +52,7 @@ export async function POST(request) {
     }
 
     // Verify user exists and is approved (admins can also upload if they want, but usually artists)
-    const user = getUserById(session.userId);
+    const user = await getUserById(session.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

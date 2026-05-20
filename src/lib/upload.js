@@ -18,6 +18,22 @@ export async function saveUploadedFile(file, subfolder) {
     throw new Error('File size exceeds the 5MB limit.');
   }
 
+  // If Vercel Blob Storage token is provided, upload directly to the cloud CDN
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const { put } = require('@vercel/blob');
+      const ext = path.extname(file.name) || '.png';
+      const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+      const blob = await put(`uploads/${subfolder}/${uniqueName}`, file, {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN
+      });
+      return blob.url;
+    } catch (err) {
+      console.error('Failed to upload to Vercel Blob, falling back to filesystem:', err.message);
+    }
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 

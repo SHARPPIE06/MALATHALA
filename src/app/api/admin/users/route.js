@@ -10,7 +10,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
     }
 
-    const users = getAllUsers();
+    const users = await getAllUsers();
     // Exclude password hashes
     const sanitizedUsers = users.map(({ password_hash, ...user }) => user);
 

@@ -21,7 +21,94 @@ function enqueueWrite(fn) {
 }
 
 // Initialize database with pre-seeded data
-export function initDb() {
+export async function initDb() {
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    try {
+      const { kv } = require('@vercel/kv');
+      const data = await kv.get('malathala_db');
+      if (!data) {
+        const defaultDb = {
+          users: [
+            {
+              id: 'admin-uuid-0000-0000',
+              username: 'admin',
+              email: 'admin@malathala.urs.edu.ph',
+              password_hash: hashPassword('AdminSecurePassword2026!'),
+              role: 'admin',
+              status: 'approved',
+              fullName: 'Malathala Administrator',
+              category: 'Administration',
+              bio: 'System Administrator for MALATHALA visual arts portal.',
+              profilePicture: '/default-profile.png',
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 'artist-uuid-regine-santos',
+              username: 'regine',
+              email: 'regine@malathala.urs.edu.ph',
+              password_hash: hashPassword('artist123'),
+              role: 'artist',
+              status: 'approved',
+              fullName: 'Regine Santos',
+              category: 'Painting',
+              bio: 'Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.',
+              profilePicture: '/uploads/profiles/artist-avatar-1.png',
+              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              id: 'artist-uuid-karl-mendoza',
+              username: 'karl',
+              email: 'karl@malathala.urs.edu.ph',
+              password_hash: hashPassword('artist123'),
+              role: 'artist',
+              status: 'approved',
+              fullName: 'Karl Mendoza',
+              category: 'Photography',
+              bio: 'Visual storyteller capturing the hidden textures and patterns of urban and rural life.',
+              profilePicture: '/uploads/profiles/artist-avatar-2.png',
+              createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString()
+            }
+          ],
+          artworks: [
+            {
+              id: 'art-uuid-painting-1',
+              userId: 'artist-uuid-regine-santos',
+              artistName: 'Regine Santos',
+              artistAvatar: '/uploads/profiles/artist-avatar-1.png',
+              title: 'Whispers of the Morong Church',
+              description: 'An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.',
+              category: 'Painting',
+              imagePath: '/uploads/artworks/seeding-painting-1.png',
+              createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
+              likes: 2,
+              likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
+              price: 18500
+            },
+            {
+              id: 'art-uuid-photography-1',
+              userId: 'artist-uuid-karl-mendoza',
+              artistName: 'Karl Mendoza',
+              artistAvatar: '/uploads/profiles/artist-avatar-2.png',
+              title: 'Echoes of the Sierra Madre',
+              description: 'A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.',
+              category: 'Photography',
+              imagePath: '/uploads/artworks/seeding-photo-1.png',
+              createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+              likes: 1,
+              likedBy: ['admin-uuid-0000-0000'],
+              price: null
+            }
+          ]
+        };
+        await kv.set('malathala_db', defaultDb);
+        console.log('Database initialized in Vercel KV with seed data.');
+      }
+      return;
+    } catch (err) {
+      console.error('Failed to initialize KV database:', err.message);
+    }
+  }
+
   const dir = path.dirname(DB_PATH);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -141,8 +228,17 @@ export function initDb() {
 }
 
 // Read database
-function readDb() {
-  initDb();
+async function readDb() {
+  await initDb();
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    try {
+      const { kv } = require('@vercel/kv');
+      const data = await kv.get('malathala_db');
+      return data || { users: [], artworks: [] };
+    } catch (err) {
+      console.error('Failed to read from KV:', err.message);
+    }
+  }
   try {
     const content = fs.readFileSync(DB_PATH, 'utf8');
     return JSON.parse(content);
@@ -154,6 +250,14 @@ function readDb() {
 
 // Write database safely via queue
 function writeDb(data) {
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    try {
+      const { kv } = require('@vercel/kv');
+      return kv.set('malathala_db', data);
+    } catch (err) {
+      console.error('Failed to write to KV:', err.message);
+    }
+  }
   return enqueueWrite(() => {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
   });
@@ -161,28 +265,28 @@ function writeDb(data) {
 
 // --- USER OPERATIONS ---
 
-export function getAllUsers() {
-  const db = readDb();
+export async function getAllUsers() {
+  const db = await readDb();
   return db.users;
 }
 
-export function getUserById(id) {
-  const users = getAllUsers();
+export async function getUserById(id) {
+  const users = await getAllUsers();
   return users.find(u => u.id === id) || null;
 }
 
-export function getUserByUsername(username) {
-  const users = getAllUsers();
+export async function getUserByUsername(username) {
+  const users = await getAllUsers();
   return users.find(u => u.username.toLowerCase() === username.toLowerCase()) || null;
 }
 
-export function getUserByEmail(email) {
-  const users = getAllUsers();
+export async function getUserByEmail(email) {
+  const users = await getAllUsers();
   return users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
 export async function createUser(userData) {
-  const db = readDb();
+  const db = await readDb();
   const newUser = {
     id: crypto.randomUUID ? crypto.randomUUID() : `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     username: userData.username,
@@ -203,7 +307,7 @@ export async function createUser(userData) {
 }
 
 export async function updateUserStatus(userId, status) {
-  const db = readDb();
+  const db = await readDb();
   const user = db.users.find(u => u.id === userId);
   if (!user) return false;
   user.status = status; // 'approved' | 'declined' | 'pending'
@@ -212,7 +316,7 @@ export async function updateUserStatus(userId, status) {
 }
 
 export async function updateUserProfile(userId, profileData) {
-  const db = readDb();
+  const db = await readDb();
   const user = db.users.find(u => u.id === userId);
   if (!user) return false;
 
@@ -238,18 +342,18 @@ export async function updateUserProfile(userId, profileData) {
 
 // --- ARTWORK OPERATIONS ---
 
-export function getAllArtworks() {
-  const db = readDb();
+export async function getAllArtworks() {
+  const db = await readDb();
   return db.artworks;
 }
 
-export function getArtworkById(id) {
-  const artworks = getAllArtworks();
+export async function getArtworkById(id) {
+  const artworks = await getAllArtworks();
   return artworks.find(art => art.id === id) || null;
 }
 
 export async function createArtwork(artworkData) {
-  const db = readDb();
+  const db = await readDb();
   const newArtwork = {
     id: crypto.randomUUID ? crypto.randomUUID() : `art-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     userId: artworkData.userId,
@@ -271,7 +375,7 @@ export async function createArtwork(artworkData) {
 }
 
 export async function deleteArtwork(artworkId, userId, userRole) {
-  const db = readDb();
+  const db = await readDb();
   const artworkIndex = db.artworks.findIndex(art => art.id === artworkId);
   if (artworkIndex === -1) return false;
 
@@ -301,7 +405,7 @@ export async function deleteArtwork(artworkId, userId, userRole) {
 }
 
 export async function toggleLikeArtwork(artworkId, userId) {
-  const db = readDb();
+  const db = await readDb();
   const artwork = db.artworks.find(art => art.id === artworkId);
   if (!artwork) return null;
 
