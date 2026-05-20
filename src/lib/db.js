@@ -2,7 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { hashPassword } from './auth';
 
-const isVercel = process.env.VERCEL === '1';
+const isVercel = process.env.VERCEL === '1' || 
+                 process.env.VERCEL_ENV || 
+                 process.env.NOW_REGION || 
+                 process.env.LAMBDA_TASK_ROOT || 
+                 process.cwd().includes('/var/task') || 
+                 process.cwd().includes('\\var\\task') || 
+                 process.cwd().startsWith('/var/task');
+
 const DB_PATH = isVercel
   ? path.join('/tmp', 'db.json')
   : path.join(process.cwd(), 'data', 'db.json');

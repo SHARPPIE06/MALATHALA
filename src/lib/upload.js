@@ -38,7 +38,14 @@ export async function saveUploadedFile(file, subfolder) {
   const buffer = Buffer.from(bytes);
 
   // Define upload directories
-  const isVercel = process.env.VERCEL === '1';
+  const isVercel = process.env.VERCEL === '1' || 
+                   process.env.VERCEL_ENV || 
+                   process.env.NOW_REGION || 
+                   process.env.LAMBDA_TASK_ROOT || 
+                   process.cwd().includes('/var/task') || 
+                   process.cwd().includes('\\var\\task') || 
+                   process.cwd().startsWith('/var/task');
+
   const uploadDir = isVercel
     ? path.join('/tmp', 'uploads', subfolder)
     : path.join(process.cwd(), 'public', 'uploads', subfolder);
