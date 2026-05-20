@@ -3,6 +3,8 @@ import { decryptSession } from '@/lib/auth';
 import Navbar from '@/components/Navbar';
 import './globals.css';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'MALATHALA - Visual Artist Showcase Portal',
   description: 'A premium portfolio showcase website for visual artists at the University of Rizal System, Morong Campus.',

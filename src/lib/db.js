@@ -2,7 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { hashPassword } from './auth';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+const isVercel = process.env.VERCEL === '1';
+const DB_PATH = isVercel
+  ? path.join('/tmp', 'db.json')
+  : path.join(process.cwd(), 'data', 'db.json');
 
 // Memory queue to prevent concurrent write file corruption
 let writeQueue = Promise.resolve();

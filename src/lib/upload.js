@@ -38,7 +38,11 @@ export async function saveUploadedFile(file, subfolder) {
   const buffer = Buffer.from(bytes);
 
   // Define upload directories
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', subfolder);
+  const isVercel = process.env.VERCEL === '1';
+  const uploadDir = isVercel
+    ? path.join('/tmp', 'uploads', subfolder)
+    : path.join(process.cwd(), 'public', 'uploads', subfolder);
+
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
@@ -48,9 +52,11 @@ export async function saveUploadedFile(file, subfolder) {
   const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
   const filePath = path.join(uploadDir, uniqueName);
 
-  // Write file to public/uploads/...
+  // Write file
   fs.writeFileSync(filePath, buffer);
 
   // Return public path
-  return `/uploads/${subfolder}/${uniqueName}`;
+  return isVercel
+    ? `/api/uploads/${subfolder}/${uniqueName}`
+    : `/uploads/${subfolder}/${uniqueName}`;
 }
