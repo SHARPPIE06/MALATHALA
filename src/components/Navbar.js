@@ -2,11 +2,33 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Navbar({ session }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (session?.role !== 'admin') return;
+
+    const fetchPendingCount = async () => {
+      try {
+        const res = await fetch('/api/admin/pending-count');
+        if (res.ok) {
+          const data = await res.json();
+          setPendingCount(data.count);
+        }
+      } catch (err) {
+        console.error('Error fetching pending counts:', err);
+      }
+    };
+
+    fetchPendingCount();
+    // Poll every 10 seconds for real-time notification updates
+    const interval = setInterval(fetchPendingCount, 10000);
+    return () => clearInterval(interval);
+  }, [session]);
 
   const handleLogout = async () => {
     if (loading) return;
@@ -46,8 +68,11 @@ export default function Navbar({ session }) {
             <>
               {session.role === 'admin' ? (
                 <li>
-                  <Link href="/admin" className="nav-link">
+                  <Link href="/admin" className="nav-link" style={{ display: 'flex', alignItems: 'center' }}>
                     Admin Panel
+                    {pendingCount > 0 && (
+                      <span className="admin-badge">{pendingCount}</span>
+                    )}
                   </Link>
                 </li>
               ) : (

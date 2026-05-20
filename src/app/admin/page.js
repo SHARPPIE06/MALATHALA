@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
@@ -12,10 +12,65 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
   const [actionLoading, setActionLoading] = useState({});
+  const [newUserNotification, setNewUserNotification] = useState(null);
 
-  // Fetch admin data
+  const usersRef = useRef([]);
+
   useEffect(() => {
-    async function loadAdminData() {
+    usersRef.current = users;
+  }, [users]);
+
+  // Load and refresh admin data
+  const loadAdminData = async (isPoll = false) => {
+    try {
+      // Fetch users list
+      const usersRes = await fetch('/api/admin/users');
+      if (!usersRes.ok) {
+        if (!isPoll) router.push('/');
+        return;
+      }
+      const usersData = await usersRes.json();
+      
+      // If polling, check for new pending user requests to notify
+      if (isPoll && usersRef.current.length > 0) {
+        const currentPendingIds = usersRef.current.filter(u => u.status === 'pending').map(u => u.id);
+        const newPendingUsers = usersData.users.filter(
+          nu => nu.status === 'pending' && !currentPendingIds.includes(nu.id)
+        );
+
+        if (newPendingUsers.length > 0) {
+          // Play a gentle notification sound chime
+          try {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-500.wav');
+            audio.volume = 0.4;
+            audio.play();
+          } catch (soundError) {
+            // Ignore browsers blocking audio autoplay
+          }
+          // Set notification toast
+          setNewUserNotification(newPendingUsers[0]);
+          // Clear after 8 seconds
+          setTimeout(() => setNewUserNotification(null), 8000);
+        }
+      }
+
+      setUsers(usersData.users);
+
+      // Fetch artworks count
+      const artRes = await fetch('/api/artworks');
+      if (artRes.ok) {
+        const artData = await artRes.json();
+        setArtworksCount(artData.artworks.length);
+      }
+
+    } catch (err) {
+      console.error('Failed to reload admin dashboard data:', err);
+      if (!isPoll) router.push('/login');
+    }
+  };
+
+  useEffect(() => {
+    async function initDashboard() {
       try {
         // Fetch current profile to verify admin status
         const profRes = await fetch('/api/profile');
@@ -31,31 +86,20 @@ export default function AdminDashboard() {
           return;
         }
 
-        // Fetch users list
-        const usersRes = await fetch('/api/admin/users');
-        if (!usersRes.ok) {
-          router.push('/');
-          return;
-        }
-        const usersData = await usersRes.json();
-        setUsers(usersData.users);
-
-        // Fetch artworks count
-        const artRes = await fetch('/api/artworks');
-        if (artRes.ok) {
-          const artData = await artRes.json();
-          setArtworksCount(artData.artworks.length);
-        }
-
+        await loadAdminData(false);
       } catch (err) {
-        console.error('Failed to load admin dashboard data:', err);
+        console.error(err);
         router.push('/login');
       } finally {
         setLoading(false);
       }
     }
 
-    loadAdminData();
+    initDashboard();
+
+    // Start polling every 10 seconds for real-time notification capability
+    const interval = setInterval(() => loadAdminData(true), 10000);
+    return () => clearInterval(interval);
   }, [router]);
 
   // Handle status update
@@ -275,6 +319,37 @@ export default function AdminDashboard() {
           </div>
         )}
       </section>
+
+      {/* Floating Real-Time notification Toast */}
+      {newUserNotification && (
+        <div className="realtime-toast">
+          <div className="toast-icon">🔔</div>
+          <div className="toast-body">
+            <div className="toast-title">New Artist Registration</div>
+            <div className="toast-text">
+              <strong>{newUserNotification.fullName}</strong> has applied as a <strong>{newUserNotification.category}</strong> artist.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => {
+                handleStatusChange(newUserNotification.id, 'approved');
+                setNewUserNotification(null);
+              }}
+              className="btn btn-primary btn-small"
+              style={{ background: '#2ECC71', color: 'white', border: 'none', boxShadow: 'none', padding: '6px 12px' }}
+            >
+              Approve
+            </button>
+            <button 
+              className="toast-close"
+              onClick={() => setNewUserNotification(null)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
