@@ -8,6 +8,12 @@ export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'MALATHALA - Visual Artist Showcase Portal',
   description: 'A premium portfolio showcase website for visual artists.',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    viewportFit: 'cover',
+  },
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
