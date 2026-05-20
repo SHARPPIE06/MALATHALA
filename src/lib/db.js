@@ -211,8 +211,13 @@ export async function initDb() {
     try {
       const data = await getFromSupabase();
       if (!data || !data.users || !Array.isArray(data.users) || !data.artworks || !Array.isArray(data.artworks)) {
-        await setInSupabase(defaultDb);
-        console.log('Database initialized in Supabase with seed data.');
+        const success = await setInSupabase(defaultDb);
+        if (success) {
+          console.log('Database initialized in Supabase with seed data.');
+          return;
+        } else {
+          console.error('Failed to save to Supabase, falling back to next storage method.');
+        }
       } else {
         // Enforce presence of admin & seed data
         let modified = false;
@@ -237,11 +242,15 @@ export async function initDb() {
         });
 
         if (modified) {
-          await setInSupabase(data);
-          console.log('Seed users/artworks validated and merged into existing Supabase.');
+          const success = await setInSupabase(data);
+          if (success) {
+            console.log('Seed users/artworks validated and merged into existing Supabase.');
+            return;
+          }
+        } else {
+          return;
         }
       }
-      return;
     } catch (err) {
       console.error('Failed to initialize database on Supabase:', err.message);
     }
@@ -253,8 +262,13 @@ export async function initDb() {
       const { kv } = require('@vercel/kv');
       const data = await kv.get('malathala_db');
       if (!data || !data.users || !Array.isArray(data.users) || !data.artworks || !Array.isArray(data.artworks)) {
-        await kv.set('malathala_db', defaultDb);
-        console.log('Database initialized in Vercel KV with seed data.');
+        try {
+          await kv.set('malathala_db', defaultDb);
+          console.log('Database initialized in Vercel KV with seed data.');
+          return;
+        } catch (e) {
+          console.error('Failed to save to KV, falling back...');
+        }
       } else {
         let modified = false;
         if (!data.users.find(u => u.username === 'admin')) {
@@ -278,10 +292,14 @@ export async function initDb() {
         });
 
         if (modified) {
-          await kv.set('malathala_db', data);
+          try {
+            await kv.set('malathala_db', data);
+            return;
+          } catch (e) {}
+        } else {
+          return;
         }
       }
-      return;
     } catch (err) {
       console.error('Failed to initialize KV database:', err.message);
     }
@@ -369,8 +387,8 @@ async function readDb() {
     const content = fs.readFileSync(DB_PATH, 'utf8');
     return JSON.parse(content);
   } catch (err) {
-    console.error('Error reading database file, returning empty schema:', err.message);
-    return { users: [], artworks: [] };
+    console.error('Error reading database file, returning default schema:', err.message);
+    return JSON.parse(JSON.stringify(defaultDb));
   }
 }
 
