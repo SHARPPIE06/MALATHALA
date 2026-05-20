@@ -13,6 +13,7 @@ export default function AdminClient() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [actionLoading, setActionLoading] = useState({});
   const [newUserNotification, setNewUserNotification] = useState(null);
+  const [session, setSession] = useState(null);
 
   const usersRef = useRef([]);
 
@@ -86,6 +87,7 @@ export default function AdminClient() {
           return;
         }
 
+        setSession(profData.user);
         await loadAdminData(false);
       } catch (err) {
         console.error(err);
@@ -136,21 +138,48 @@ export default function AdminClient() {
     } finally {
       setActionLoading(prev => ({ ...prev, [userId]: false }));
     }
+  };  // Handle role update (promoting/demoting admins)
+  const handleRoleChange = async (userId, newRole) => {
+    if (actionLoading[userId]) return;
+
+    setActionLoading(prev => ({ ...prev, [userId]: true }));
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole })
+      });
+
+      if (res.ok) {
+        // Update user role in local state
+        setUsers(prev =>
+          prev.map(u => (u.id === userId ? { ...u, role: newRole } : u))
+        );
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update user role.');
+      }
+    } catch (err) {
+      console.error('Role change error:', err);
+      alert('An error occurred.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [userId]: false }));
+    }
   };
 
   // Compute stats
   const totalUsers = users.length;
-  const pendingCount = users.filter(u => u.status === 'pending' && u.role !== 'admin').length;
-  const approvedCount = users.filter(u => u.status === 'approved' && u.role !== 'admin').length;
-  const declinedCount = users.filter(u => u.status === 'declined' && u.role !== 'admin').length;
+  const pendingCount = users.filter(u => u.status === 'pending' && (!session || u.id !== session.userId)).length;
+  const approvedCount = users.filter(u => u.status === 'approved' && (!session || u.id !== session.userId)).length;
+  const declinedCount = users.filter(u => u.status === 'declined' && (!session || u.id !== session.userId)).length;
 
   // Filter users for display
   const displayedUsers = users.filter(u => {
-    if (u.role === 'admin') return false; // Hide admin from list
+    if (session && u.id === session.userId) return false; // Hide current admin from list
     if (filterStatus === 'All') return true;
     return u.status === filterStatus.toLowerCase();
   });
-
   if (loading) {
     return (
       <div className="container" style={{ textAlign: 'center', padding: '120px 0', color: 'var(--text-secondary)' }}>
@@ -247,8 +276,14 @@ export default function AdminClient() {
                         />
                         <div>
                           <div className="user-cell-name">{u.fullName}</div>
-                          <div className="user-cell-username">@{u.username}</div>
-                        </div>
+                          <div className="user-cell-username">
+                            @{u.username}
+                            {u.role === 'admin' && (
+                              <span className="badge badge-approved" style={{ fontSize: '9px', marginLeft: '6px', padding: '2px 6px', background: 'rgba(245, 176, 65, 0.15)', color: 'var(--color-gold)', borderColor: 'rgba(245, 176, 65, 0.3)' }}>
+                                admin
+                              </span>
+                            )}
+                          </div>                        </div>
                       </div>
                     </td>
                     <td>{u.email}</td>
@@ -283,14 +318,35 @@ export default function AdminClient() {
                           </>
                         )}
                         {u.status === 'approved' && (
-                          <button
-                            onClick={() => handleStatusChange(u.id, 'declined')}
-                            disabled={actionLoading[u.id]}
-                            className="btn btn-danger btn-small"
-                            style={{ background: 'transparent', border: '1px solid #E74C3C', color: '#E74C3C' }}
-                          >
-                            Block / Decline
-                          </button>
+                          <>
+                            {u.role === 'artist' ? (
+                              <button
+                                onClick={() => handleRoleChange(u.id, 'admin')}
+                                disabled={actionLoading[u.id]}
+                                className="btn btn-secondary btn-small"
+                                style={{ background: 'transparent', border: '1px solid var(--color-gold)', color: 'var(--color-gold)', fontSize: '11px', marginRight: '6px' }}
+                              >
+                                Make Admin
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleRoleChange(u.id, 'artist')}
+                                disabled={actionLoading[u.id]}
+                                className="btn btn-secondary btn-small"
+                                style={{ background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-muted)', fontSize: '11px', marginRight: '6px' }}
+                              >
+                                Remove Admin
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleStatusChange(u.id, 'declined')}
+                              disabled={actionLoading[u.id]}
+                              className="btn btn-danger btn-small"
+                              style={{ background: 'transparent', border: '1px solid #E74C3C', color: '#E74C3C', fontSize: '11px' }}
+                            >
+                              Block / Decline
+                            </button>
+                          </>
                         )}
                         {u.status === 'declined' && (
                           <>

@@ -174,6 +174,34 @@ export async function initDb() {
         likes: 1,
         likedBy: ['admin-uuid-0000-0000'],
         price: null
+      },
+      {
+        id: 'art-uuid-sculpture-1',
+        userId: 'artist-uuid-regine-santos',
+        artistName: 'Regine Santos',
+        artistAvatar: '/uploads/profiles/artist-avatar-1.png',
+        title: 'Form and Flow',
+        description: 'A hand-carved mahogany sculpture capturing fluid abstract human silhouettes, reflecting human connections and family unity.',
+        category: 'Sculpture',
+        imagePath: '/uploads/artworks/seeding-sculpture-1.png',
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        likes: 3,
+        likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
+        price: 32000
+      },
+      {
+        id: 'art-uuid-digital-1',
+        userId: 'artist-uuid-karl-mendoza',
+        artistName: 'Karl Mendoza',
+        artistAvatar: '/uploads/profiles/artist-avatar-2.png',
+        title: 'Neon Oasis',
+        description: 'A futuristic digital painting exploring the intersection of cybernetic structures and bioluminescent nature.',
+        category: 'Digital Arts',
+        imagePath: '/uploads/artworks/seeding-digital-1.png',
+        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        likes: 4,
+        likedBy: ['admin-uuid-0000-0000', 'artist-uuid-regine-santos'],
+        price: 9500
       }
     ]
   };
@@ -200,10 +228,14 @@ export async function initDb() {
           data.users.push(defaultDb.users[2]);
           modified = true;
         }
-        if (data.artworks.length === 0) {
-          data.artworks.push(...defaultDb.artworks);
-          modified = true;
-        }
+        
+        defaultDb.artworks.forEach(seedArt => {
+          if (!data.artworks.some(art => art.id === seedArt.id)) {
+            data.artworks.push(seedArt);
+            modified = true;
+          }
+        });
+
         if (modified) {
           await setInSupabase(data);
           console.log('Seed users/artworks validated and merged into existing Supabase.');
@@ -237,10 +269,14 @@ export async function initDb() {
           data.users.push(defaultDb.users[2]);
           modified = true;
         }
-        if (data.artworks.length === 0) {
-          data.artworks.push(...defaultDb.artworks);
-          modified = true;
-        }
+        
+        defaultDb.artworks.forEach(seedArt => {
+          if (!data.artworks.some(art => art.id === seedArt.id)) {
+            data.artworks.push(seedArt);
+            modified = true;
+          }
+        });
+
         if (modified) {
           await kv.set('malathala_db', data);
         }
@@ -276,10 +312,14 @@ export async function initDb() {
       data.users.push(defaultDb.users[2]);
       modified = true;
     }
-    if (data.artworks.length === 0) {
-      data.artworks.push(...defaultDb.artworks);
-      modified = true;
-    }
+    
+    defaultDb.artworks.forEach(seedArt => {
+      if (!data.artworks.some(art => art.id === seedArt.id)) {
+        data.artworks.push(seedArt);
+        modified = true;
+      }
+    });
+
     if (modified) {
       fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
       console.log('Seed users/artworks validated and merged into existing local database.');
@@ -411,6 +451,15 @@ export async function updateUserStatus(userId, status) {
   const user = db.users.find(u => u.id === userId);
   if (!user) return false;
   user.status = status; // 'approved' | 'declined' | 'pending'
+  await writeDb(db);
+  return true;
+}
+
+export async function updateUserRole(userId, role) {
+  const db = await readDb();
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return false;
+  user.role = role; // 'admin' | 'artist'
   await writeDb(db);
   return true;
 }
