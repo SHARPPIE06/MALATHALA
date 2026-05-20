@@ -83,26 +83,7 @@ export async function POST(request) {
 
       const responsePayload = { message: `User account status updated successfully!` };
 
-      // If status is approved, automatically log in as this user on the browser session
-      if (status === 'approved') {
-        const user = await getUserById(userId);
-        if (user) {
-          const sessionPayload = {
-            userId: user.id,
-            username: user.username,
-            role: user.role,
-            fullName: user.fullName,
-            profilePicture: user.profilePicture
-          };
-          responsePayload.autoLogin = true;
-          responsePayload.user = sessionPayload;
-          
-          const response = NextResponse.json(responsePayload);
-          setSessionCookie(response, sessionPayload);
-          return response;
-        }
-      }
-
+  // Auto-login after approval disabled – no session cookie set
       return NextResponse.json(responsePayload);
     }
 
