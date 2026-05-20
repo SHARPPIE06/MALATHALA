@@ -79,13 +79,24 @@ export async function POST(request) {
     // Exclude password hash from response
     const { password_hash, ...userResponse } = newUser;
 
-    return NextResponse.json(
-      { 
-        message: 'Registration successful! Your application is now pending administrator approval.', 
-        user: userResponse 
-      },
-      { status: 201 }
-    );
+    const responsePayload = { 
+      message: 'Registration successful! Your application is now pending administrator approval.', 
+      user: userResponse 
+    };
+
+    const response = NextResponse.json(responsePayload, { status: 201 });
+
+    // Set pending session cookie immediately so they can poll for approval
+    const { setPendingSessionCookie } = require('@/lib/auth');
+    setPendingSessionCookie(response, {
+      userId: newUser.id,
+      username: newUser.username,
+      role: newUser.role,
+      fullName: newUser.fullName,
+      profilePicture: newUser.profilePicture
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Registration API error:', error);

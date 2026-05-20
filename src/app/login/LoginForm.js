@@ -15,14 +15,68 @@ function LoginFormContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
 
   useEffect(() => {
+    // Check if there is an active pending session already in progress
+    async function checkExistingPending() {
+      try {
+        const res = await fetch('/api/auth/check-approval');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'pending') {
+            setSuccess('Your account is pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+            setIsPolling(true);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    
     if (verified === 'true') {
-      setSuccess('Email successfully verified! Your account is now pending administrator approval.');
+      setSuccess('Email successfully verified! Your account is now pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+      setIsPolling(true);
     } else if (applied === 'true') {
-      setSuccess('Application submitted successfully! Your account is now pending administrator approval.');
+      setSuccess('Application submitted successfully! Your account is now pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+      setIsPolling(true);
+    } else {
+      checkExistingPending();
     }
   }, [verified, applied]);
+
+  // Polling effect for automatic login upon admin approval
+  useEffect(() => {
+    if (!isPolling) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/auth/check-approval');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.approved) {
+            clearInterval(interval);
+            setIsPolling(false);
+            setSuccess('Your account has been approved! Logging you in...');
+            setError('');
+            router.refresh();
+            setTimeout(() => {
+              router.push('/profile');
+            }, 1000);
+          } else if (data.status === 'declined') {
+            clearInterval(interval);
+            setIsPolling(false);
+            setError('Your application request was declined by the administrator.');
+            setSuccess('');
+          }
+        }
+      } catch (err) {
+        console.error('Check approval polling error:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isPolling, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,7 +109,13 @@ function LoginFormContent() {
           }
         }, 1000);
       } else {
-        setError(data.error || 'Invalid credentials');
+        if (data.status === 'pending') {
+          setSuccess('Your account is pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+          setError('');
+          setIsPolling(true);
+        } else {
+          setError(data.error || 'Invalid credentials');
+        }
       }
     } catch (err) {
       console.error('Login submit error:', err);
