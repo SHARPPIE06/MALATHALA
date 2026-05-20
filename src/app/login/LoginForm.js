@@ -9,7 +9,6 @@ function LoginFormContent() {
   const searchParams = useSearchParams();
   const verified = searchParams.get('verified');
   const applied = searchParams.get('applied');
-
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,32 +17,59 @@ function LoginFormContent() {
   const [isPolling, setIsPolling] = useState(false);
 
   useEffect(() => {
-    // Check if there is an active pending session already in progress
-    async function checkExistingPending() {
+    async function checkLoggedIn() {
       try {
-        const res = await fetch('/api/auth/check-approval');
+        const res = await fetch('/api/profile');
         if (res.ok) {
           const data = await res.json();
-          if (data.status === 'pending') {
-            setSuccess('Your account is pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
-            setIsPolling(true);
+          if (data.user) {
+            if (data.user.role === 'admin') {
+              router.push('/admin');
+            } else {
+              router.push('/profile');
+            }
+            return true;
           }
         }
       } catch (e) {
         // ignore
       }
+      return false;
     }
-    
-    if (verified === 'true') {
-      setSuccess('Email successfully verified! Your account is now pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
-      setIsPolling(true);
-    } else if (applied === 'true') {
-      setSuccess('Application submitted successfully! Your account is now pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
-      setIsPolling(true);
-    } else {
-      checkExistingPending();
+
+    async function checkAndInit() {
+      const loggedIn = await checkLoggedIn();
+      if (loggedIn) return;
+
+      // Check if there is an active pending session already in progress
+      async function checkExistingPending() {
+        try {
+          const res = await fetch('/api/auth/check-approval');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'pending') {
+              setSuccess('Your account is pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+              setIsPolling(true);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      
+      if (verified === 'true') {
+        setSuccess('Email successfully verified! Your account is now pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+        setIsPolling(true);
+      } else if (applied === 'true') {
+        setSuccess('Application submitted successfully! Your account is now pending administrator approval. Keep this page open; you will be logged in automatically once approved.');
+        setIsPolling(true);
+      } else {
+        checkExistingPending();
+      }
     }
-  }, [verified, applied]);
+
+    checkAndInit();
+  }, [verified, applied, router]);
 
   // Polling effect for automatic login upon admin approval
   useEffect(() => {

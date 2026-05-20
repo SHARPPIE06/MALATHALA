@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -16,6 +16,27 @@ export default function RegisterForm() {
   const [profilePicPreview, setProfilePicPreview] = useState('/default-profile.png');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkLoggedIn() {
+      try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            if (data.user.role === 'admin') {
+              router.push('/admin');
+            } else {
+              router.push('/profile');
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    checkLoggedIn();
+  }, [router]);
 
   const categories = [
     'Drawing',
