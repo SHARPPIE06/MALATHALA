@@ -8,11 +8,19 @@ function VerificationFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
+  const debugCode = searchParams.get('code') || '';
 
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Autofill code if debugCode parameter is present in URL
+  useEffect(() => {
+    if (debugCode && !code) {
+      setCode(debugCode);
+    }
+  }, [debugCode]);
 
   useEffect(() => {
     if (!email) {
@@ -69,6 +77,12 @@ function VerificationFormContent() {
       {error && (
         <div style={{ padding: '12px 16px', background: 'rgba(231,76,60,0.1)', border: '1px solid #E74C3C', color: '#E74C3C', borderRadius: 'var(--radius-sm)', fontSize: '13px', marginBottom: '24px' }}>
           ⚠️ {error}
+        </div>
+      )}
+
+      {debugCode && (
+        <div style={{ padding: '12px 16px', background: 'rgba(245,176,65,0.1)', border: '1px solid var(--color-gold)', color: 'var(--color-gold)', borderRadius: 'var(--radius-sm)', fontSize: '13px', marginBottom: '24px', textAlign: 'center', lineHeight: '1.5' }}>
+          💡 <strong>Demo Mode</strong>: SMTP is not configured. We auto-filled your test verification code: <strong style={{ fontSize: '15px', color: '#fff', background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>{debugCode}</strong>
         </div>
       )}
 

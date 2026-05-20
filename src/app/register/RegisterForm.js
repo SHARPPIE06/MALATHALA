@@ -70,7 +70,11 @@ export default function RegisterForm() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push(`/register/verify?email=${encodeURIComponent(email)}`);
+        if (data.debugCode) {
+          router.push(`/register/verify?email=${encodeURIComponent(email)}&code=${data.debugCode}`);
+        } else {
+          router.push(`/register/verify?email=${encodeURIComponent(email)}`);
+        }
       } else {
         setError(data.error || 'Registration failed.');
       }
