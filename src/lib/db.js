@@ -2,17 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import { hashPassword } from './auth';
 
-const isVercel = process.env.VERCEL === '1' || 
-                 process.env.VERCEL_ENV || 
-                 process.env.NOW_REGION || 
-                 process.env.LAMBDA_TASK_ROOT || 
-                 process.cwd().includes('/var/task') || 
-                 process.cwd().includes('\\var\\task') || 
-                 process.cwd().startsWith('/var/task');
+// Detect writeable filesystem via a direct write test, falling back to /tmp if read-only
+let DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+let isVercel = false;
 
-const DB_PATH = isVercel
-  ? path.join('/tmp', 'db.json')
-  : path.join(process.cwd(), 'data', 'db.json');
+try {
+  const dir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  const testFile = path.join(dir, `.write-test-${Date.now()}`);
+  fs.writeFileSync(testFile, 'test');
+  fs.unlinkSync(testFile);
+} catch (err) {
+  isVercel = true;
+  DB_PATH = path.join('/tmp', 'db.json');
+}
 
 // Memory queue to prevent concurrent write file corruption
 let writeQueue = Promise.resolve();

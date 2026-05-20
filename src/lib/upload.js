@@ -37,21 +37,24 @@ export async function saveUploadedFile(file, subfolder) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // Define upload directories
-  const isVercel = process.env.VERCEL === '1' || 
-                   process.env.VERCEL_ENV || 
-                   process.env.NOW_REGION || 
-                   process.env.LAMBDA_TASK_ROOT || 
-                   process.cwd().includes('/var/task') || 
-                   process.cwd().includes('\\var\\task') || 
-                   process.cwd().startsWith('/var/task');
+  // Define upload directories and test write permissions to auto-detect read-only environments
+  let uploadDir = path.join(process.cwd(), 'public', 'uploads', subfolder);
+  let isVercel = false;
 
-  const uploadDir = isVercel
-    ? path.join('/tmp', 'uploads', subfolder)
-    : path.join(process.cwd(), 'public', 'uploads', subfolder);
-
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  try {
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const testFile = path.join(uploadDir, `.write-test-${Date.now()}`);
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+  } catch (err) {
+    // Read-only filesystem detected, fallback to /tmp
+    isVercel = true;
+    uploadDir = path.join('/tmp', 'uploads', subfolder);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
   }
 
   // Generate unique filename
