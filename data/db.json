@@ -1,0 +1,78 @@
+{
+  "users": [
+    {
+      "id": "admin-uuid-0000-0000",
+      "username": "admin",
+      "email": "admin@malathala.urs.edu.ph",
+      "password_hash": "ca3a7cf5ad58885ab813cf6fe2d27294:30a6cf1de3b5152dfb923daad42f367d3c6d9f9a14dae0795bba9afa6707c0658a390d8c1627cd99baaae0b198367b0b5ceee55bb57d11bee2a9ccf83a5901e1",
+      "role": "admin",
+      "status": "approved",
+      "fullName": "Malathala Administrator",
+      "category": "Administration",
+      "bio": "System Administrator for MALATHALA visual arts portal.",
+      "profilePicture": "/logo.png",
+      "createdAt": "2026-05-20T02:55:22.235Z"
+    },
+    {
+      "id": "artist-uuid-regine-santos",
+      "username": "regine",
+      "email": "regine@malathala.urs.edu.ph",
+      "password_hash": "cac50f40b749f7308530e93e556ea79d:bbfd0350dbdbd430cad7842d0c751d3a324b447f223468e174a358e7d48068593fce966875f16dbe5d370ee9e44c9e32b894521c1e0a9c3a87dad5bfa0c4ccae",
+      "role": "artist",
+      "status": "approved",
+      "fullName": "Regine Santos",
+      "category": "Painting",
+      "bio": "Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.",
+      "profilePicture": "/uploads/profiles/artist-avatar-1.png",
+      "createdAt": "2026-05-19T02:55:22.293Z"
+    },
+    {
+      "id": "artist-uuid-karl-mendoza",
+      "username": "karl",
+      "email": "karl@malathala.urs.edu.ph",
+      "password_hash": "1a54c92b43347745cedb61414c1c08c8:6c3fbc4abd788650f8eee15dca3a1ce40cd1a2c09ed1b01f24e35c83b1c2cf03a02ddb6834aeb4161eca1691dd2aedf4018568b7e7021a9cadc85597ac38e5a1",
+      "role": "artist",
+      "status": "approved",
+      "fullName": "Karl Mendoza",
+      "category": "Photography",
+      "bio": "Visual storyteller capturing the hidden textures and patterns of urban and rural life.",
+      "profilePicture": "/uploads/profiles/artist-avatar-2.png",
+      "createdAt": "2026-05-19T03:55:22.345Z"
+    }
+  ],
+  "artworks": [
+    {
+      "id": "art-uuid-painting-1",
+      "userId": "artist-uuid-regine-santos",
+      "artistName": "Regine Santos",
+      "artistAvatar": "/uploads/profiles/artist-avatar-1.png",
+      "title": "Whispers of the Morong Church",
+      "description": "An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.",
+      "category": "Painting",
+      "imagePath": "/uploads/artworks/seeding-painting-1.png",
+      "createdAt": "2026-05-19T16:55:22.345Z",
+      "likes": 2,
+      "likedBy": [
+        "admin-uuid-0000-0000",
+        "artist-uuid-karl-mendoza"
+      ],
+      "price": 18500
+    },
+    {
+      "id": "art-uuid-photography-1",
+      "userId": "artist-uuid-karl-mendoza",
+      "artistName": "Karl Mendoza",
+      "artistAvatar": "/uploads/profiles/artist-avatar-2.png",
+      "title": "Echoes of the Sierra Madre",
+      "description": "A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.",
+      "category": "Photography",
+      "imagePath": "/uploads/artworks/seeding-photo-1.png",
+      "createdAt": "2026-05-19T18:55:22.345Z",
+      "likes": 1,
+      "likedBy": [
+        "admin-uuid-0000-0000"
+      ],
+      "price": null
+    }
+  ]
+}
