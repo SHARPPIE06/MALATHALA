@@ -71,7 +71,8 @@ async function setInSupabase(data) {
 
   try {
     const cleanUrl = url.replace(/\/$/, '');
-    const res = await fetch(`${cleanUrl}/rest/v1/malathala_store`, {
+    // Use upsert by specifying the conflict target
+    const res = await fetch(`${cleanUrl}/rest/v1/malathala_store?on_conflict=key`, {
       method: 'POST',
       headers: {
         'apikey': key,
@@ -81,19 +82,10 @@ async function setInSupabase(data) {
       },
       body: JSON.stringify({ key: 'db', value: data })
     });
+    
     if (!res.ok) {
-      // Attempt upsert fallback
-      const upsertRes = await fetch(`${cleanUrl}/rest/v1/malathala_store`, {
-        method: 'POST',
-        headers: {
-          'apikey': key,
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'upsert'
-        },
-        body: JSON.stringify({ key: 'db', value: data })
-      });
-      return upsertRes.ok;
+      console.error('Supabase upsert failed:', await res.text());
+      return false;
     }
     return true;
   } catch (err) {
