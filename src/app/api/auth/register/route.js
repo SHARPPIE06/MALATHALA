@@ -1,59 +1,46 @@
 import { NextResponse } from 'next/server';
-import { getUserByUsername, getUserByEmail, createUser } from '@/lib/db';
+import { createUser, getUserByUsername, getUserByEmail } from '@/lib/db';
 import { saveUploadedFile } from '@/lib/upload';
-import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request) {
   try {
     const formData = await request.formData();
-    const username = formData.get('username')?.toString().trim();
-    const email = formData.get('email')?.toString().trim();
-    const password = formData.get('password')?.toString();
-    const fullName = formData.get('fullName')?.toString().trim();
-    const category = formData.get('category')?.toString().trim();
-    const bio = formData.get('bio')?.toString().trim() || '';
+    const username = formData.get('username')?.trim();
+    const email = formData.get('email')?.trim();
+    const password = formData.get('password');
+    const fullName = formData.get('fullName')?.trim();
+    const category = formData.get('category');
+    const bio = formData.get('bio')?.trim() || '';
     const profilePictureFile = formData.get('profilePicture');
 
-    // Validation
     if (!username || !email || !password || !fullName || !category) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'All fields (username, email, password, fullName, category) are required' },
         { status: 400 }
       );
     }
 
-    if (username.length < 3 || username.length > 20) {
-      return NextResponse.json(
-        { error: 'Username must be between 3 and 20 characters' },
-        { status: 400 }
-      );
+    // Validation checks
+    if (username.length < 3) {
+      return NextResponse.json({ error: 'Username must be at least 3 characters long.' }, { status: 400 });
     }
-
     if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Password must be at least 6 characters long.' }, { status: 400 });
     }
 
-    // Check availability
-    const existingUser = await getUserByUsername(username);
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Username is already taken' },
-        { status: 409 }
-      );
+    // Check if username already exists
+    const existingUserByUsername = await getUserByUsername(username);
+    if (existingUserByUsername) {
+      return NextResponse.json({ error: 'Username is already taken.' }, { status: 400 });
     }
 
-    const existingEmail = await getUserByEmail(email);
-    if (existingEmail) {
-      return NextResponse.json(
-        { error: 'Email is already registered' },
-        { status: 409 }
-      );
+    // Check if email already exists
+    const existingUserByEmail = await getUserByEmail(email);
+    if (existingUserByEmail) {
+      return NextResponse.json({ error: 'Email address is already registered.' }, { status: 400 });
     }
 
-    // Save profile picture
+    // Handle profile picture upload
     let profilePictureUrl = '/default-profile.png';
     if (profilePictureFile && profilePictureFile.size > 0) {
       try {
@@ -79,24 +66,13 @@ export async function POST(request) {
     // Exclude password hash from response
     const { password_hash, ...userResponse } = newUser;
 
-    const responsePayload = { 
-      message: 'Registration successful! Your application is now pending administrator approval.', 
-      user: userResponse 
-    };
-
-    const response = NextResponse.json(responsePayload, { status: 201 });
-
-    // Set pending session cookie immediately so they can poll for approval
-    const { setPendingSessionCookie } = require('@/lib/auth');
-    setPendingSessionCookie(response, {
-      userId: newUser.id,
-      username: newUser.username,
-      role: newUser.role,
-      fullName: newUser.fullName,
-      profilePicture: newUser.profilePicture
-    });
-
-    return response;
+    return NextResponse.json(
+      { 
+        message: 'Registration successful! Your application is now pending administrator approval.', 
+        user: userResponse 
+      },
+      { status: 201 }
+    );
 
   } catch (error) {
     console.error('Registration API error:', error);

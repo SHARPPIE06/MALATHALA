@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserByUsername } from '@/lib/db';
-import { verifyPassword, setSessionCookie, setPendingSessionCookie } from '@/lib/auth';
+import { verifyPassword, setSessionCookie } from '@/lib/auth';
 
 export async function POST(request) {
   try {
@@ -33,23 +33,13 @@ export async function POST(request) {
     // Check account status
     if (user.role !== 'admin') {
       if (user.status === 'pending') {
-        const sessionPayload = {
-          userId: user.id,
-          username: user.username,
-          role: user.role,
-          fullName: user.fullName,
-          profilePicture: user.profilePicture
-        };
-        const response = NextResponse.json(
+        return NextResponse.json(
           { 
-            error: 'Your account is pending administrator approval. Please wait for administrator review.',
-            status: 'pending',
-            username: user.username
+            error: 'Your account is pending administrator approval.',
+            status: 'pending'
           },
           { status: 403 }
         );
-        setPendingSessionCookie(response, sessionPayload);
-        return response;
       }
       
       if (user.status === 'declined') {

@@ -51,7 +51,7 @@ function VerificationFormContent() {
       if (res.ok) {
         setSuccess(data.message);
         setTimeout(() => {
-          router.push('/login?verified=true');
+          router.push('/pending-approval');
         }, 3500);
       } else {
         setError(data.error || 'Invalid verification code. Please check and try again.');

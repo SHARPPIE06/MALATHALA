@@ -125,40 +125,4 @@ export function clearSessionCookie(response) {
   return response;
 }
 
-// Retrieve pending session from request cookie
-export function getPendingSession(request) {
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookies = Object.fromEntries(
-    cookieHeader.split(';').map(c => {
-      const parts = c.trim().split('=');
-      return [parts[0], parts.slice(1).join('=')];
-    })
-  );
-  
-  const token = cookies['malathala_pending_session'];
-  if (!token) return null;
-  
-  return decryptSession(token);
-}
 
-// Add pending session cookie
-export function setPendingSessionCookie(response, payload) {
-  const expiresAt = Date.now() + 1 * 24 * 60 * 60 * 1000; // 1 day
-  const sessionData = { ...payload, expiresAt };
-  const token = encryptSession(sessionData);
-  
-  response.headers.append(
-    'Set-Cookie',
-    `malathala_pending_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${1 * 24 * 60 * 60}; Secure=${process.env.NODE_ENV === 'production'}`
-  );
-  return response;
-}
-
-// Clear pending session cookie
-export function clearPendingSessionCookie(response) {
-  response.headers.append(
-    'Set-Cookie',
-    `malathala_pending_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`
-  );
-  return response;
-}

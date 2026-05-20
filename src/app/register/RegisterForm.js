@@ -91,7 +91,7 @@ export default function RegisterForm() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push('/login?applied=true');
+        router.push('/pending-approval');
       } else {
         setError(data.error || 'Registration failed.');
       }
