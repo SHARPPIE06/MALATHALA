@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
-import { getAllUsers, updateUserStatus } from '@/lib/db';
+import { getSession, setSessionCookie } from '@/lib/auth';
+import { getAllUsers, updateUserStatus, getUserById } from '@/lib/db';
 
 // GET all users (admin only)
 export async function GET(request) {
@@ -48,7 +48,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: `User account status updated to ${status} successfully!` });
+    const responsePayload = { message: `User account status updated to ${status} successfully!` };
+
+    // If status is approved, automatically log in as this user on the browser session
+    if (status === 'approved') {
+      const user = await getUserById(userId);
+      if (user) {
+        const sessionPayload = {
+          userId: user.id,
+          username: user.username,
+          role: user.role,
+          fullName: user.fullName,
+          profilePicture: user.profilePicture
+        };
+        responsePayload.autoLogin = true;
+        responsePayload.user = sessionPayload;
+        
+        const response = NextResponse.json(responsePayload);
+        setSessionCookie(response, sessionPayload);
+        return response;
+      }
+    }
+
+    return NextResponse.json(responsePayload);
   } catch (error) {
     console.error('Admin POST user status error:', error);
     return NextResponse.json({ error: 'Failed to update user status' }, { status: 500 });

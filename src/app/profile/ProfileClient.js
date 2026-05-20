@@ -307,14 +307,14 @@ export default function ProfileClient() {
         {/* Workspace: Upload form and My artworks grid */}
         <section className="dashboard-workspace">
           {/* Section 1: Upload New Artwork */}
-          <div className="glass-panel" style={{ padding: '32px' }}>
+          <div className="glass-panel dashboard-card-panel">
             <h2 className="dashboard-section-title">Upload Artwork</h2>
             
             {artError && <div className="alert alert-error" style={{ marginTop: '16px' }}>{artError}</div>}
             {artSuccess && <div className="alert alert-success" style={{ marginTop: '16px' }}>{artSuccess}</div>}
 
             <form onSubmit={handleArtUpload} style={{ marginTop: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '32px' }}>
+              <div className="form-layout-grid">
                 <div>
                   <div className="form-group">
                     <label className="form-label">Artwork Title *</label>
@@ -341,7 +341,7 @@ export default function ProfileClient() {
                     />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '0' }}>
+                  <div className="form-grid-2col" style={{ marginBottom: '0' }}>
                     <div className="form-group" style={{ marginBottom: '0' }}>
                       <label className="form-label">Category *</label>
                       <select

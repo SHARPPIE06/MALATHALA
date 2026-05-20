@@ -108,7 +108,7 @@ export default function RegisterForm() {
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max size 5MB. JPEG, PNG, GIF, or WebP.</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div className="form-grid-2col">
             <div className="form-group">
               <label className="form-label">Username *</label>
               <input
@@ -149,7 +149,7 @@ export default function RegisterForm() {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div className="form-grid-2col">
             <div className="form-group">
               <label className="form-label">Password *</label>
               <input

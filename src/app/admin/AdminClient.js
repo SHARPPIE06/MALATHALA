@@ -116,6 +116,12 @@ export default function AdminClient() {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        if (data.autoLogin) {
+          alert('Account approved! Logging in and redirecting to the artist profile dashboard.');
+          window.location.href = '/profile';
+          return;
+        }
         // Update user status in local state
         setUsers(prev =>
           prev.map(u => (u.id === userId ? { ...u, status: newStatus } : u))
@@ -155,7 +161,7 @@ export default function AdminClient() {
   }
 
   return (
-    <div className="container fade-in" style={{ padding: '40px 0' }}>
+    <div className="container fade-in admin-panel-container">
       <h1 style={{ fontSize: '36px', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>Admin Dashboard</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '40px' }}>Manage user account requests, view statistics, and moderate galleries.</p>
 
@@ -195,7 +201,7 @@ export default function AdminClient() {
       </section>
 
       {/* User Management Section */}
-      <section className="glass-panel" style={{ padding: '32px' }}>
+      <section className="glass-panel dashboard-card-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <h2 style={{ fontSize: '20px' }}>Artist Application List</h2>
           
