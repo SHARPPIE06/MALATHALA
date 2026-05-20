@@ -10,17 +10,10 @@ function VerificationFormContent() {
   const email = searchParams.get('email') || '';
   const debugCode = searchParams.get('code') || '';
 
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(debugCode || '');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Autofill code if debugCode parameter is present in URL
-  useEffect(() => {
-    if (debugCode && !code) {
-      setCode(debugCode);
-    }
-  }, [debugCode]);
 
   useEffect(() => {
     if (!email) {
@@ -142,7 +135,7 @@ function VerificationFormContent() {
       )}
 
       <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px' }}>
-        <span style={{ color: 'var(--text-muted)' }}>Didn't receive the email? </span>
+        <span style={{ color: 'var(--text-muted)' }}>Didn&apos;t receive the email? </span>
         <Link href="/register" style={{ color: 'var(--color-gold)', textDecoration: 'none', fontWeight: '500' }}>
           Restart Registration
         </Link>

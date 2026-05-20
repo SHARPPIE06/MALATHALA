@@ -102,115 +102,115 @@ async function setInSupabase(data) {
   }
 }
 
+const defaultDb = {
+  users: [
+    {
+      id: 'admin-uuid-0000-0000',
+      username: 'admin',
+      email: 'admin@malathala.urs.edu.ph',
+      password_hash: hashPassword('AdminSecurePassword2026!'),
+      role: 'admin',
+      status: 'approved',
+      fullName: 'Malathala Administrator',
+      category: 'Administration',
+      bio: 'System Administrator for MALATHALA visual arts portal.',
+      profilePicture: '/logo.png',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'artist-uuid-regine-santos',
+      username: 'regine',
+      email: 'regine@malathala.urs.edu.ph',
+      password_hash: hashPassword('artist123'),
+      role: 'artist',
+      status: 'approved',
+      fullName: 'Regine Santos',
+      category: 'Painting',
+      bio: 'Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.',
+      profilePicture: '/uploads/profiles/artist-avatar-1.png',
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: 'artist-uuid-karl-mendoza',
+      username: 'karl',
+      email: 'karl@malathala.urs.edu.ph',
+      password_hash: hashPassword('artist123'),
+      role: 'artist',
+      status: 'approved',
+      fullName: 'Karl Mendoza',
+      category: 'Photography',
+      bio: 'Visual storyteller capturing the hidden textures and patterns of urban and rural life.',
+      profilePicture: '/uploads/profiles/artist-avatar-2.png',
+      createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString()
+    }
+  ],
+  artworks: [
+    {
+      id: 'art-uuid-painting-1',
+      userId: 'artist-uuid-regine-santos',
+      artistName: 'Regine Santos',
+      artistAvatar: '/uploads/profiles/artist-avatar-1.png',
+      title: 'Whispers of the Morong Church',
+      description: 'An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.',
+      category: 'Painting',
+      imagePath: '/uploads/artworks/seeding-painting-1.png',
+      createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
+      likes: 2,
+      likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
+      price: 18500
+    },
+    {
+      id: 'art-uuid-photography-1',
+      userId: 'artist-uuid-karl-mendoza',
+      artistName: 'Karl Mendoza',
+      artistAvatar: '/uploads/profiles/artist-avatar-2.png',
+      title: 'Echoes of the Sierra Madre',
+      description: 'A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.',
+      category: 'Photography',
+      imagePath: '/uploads/artworks/seeding-photo-1.png',
+      createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+      likes: 1,
+      likedBy: ['admin-uuid-0000-0000'],
+      price: null
+    },
+    {
+      id: 'art-uuid-sculpture-1',
+      userId: 'artist-uuid-regine-santos',
+      artistName: 'Regine Santos',
+      artistAvatar: '/uploads/profiles/artist-avatar-1.png',
+      title: 'Form and Flow',
+      description: 'A hand-carved mahogany sculpture capturing fluid abstract human silhouettes, reflecting human connections and family unity.',
+      category: 'Sculpture',
+      imagePath: '/uploads/artworks/seeding-sculpture-1.png',
+      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      likes: 3,
+      likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
+      price: 32000
+    },
+    {
+      id: 'art-uuid-digital-1',
+      userId: 'artist-uuid-karl-mendoza',
+      artistName: 'Karl Mendoza',
+      artistAvatar: '/uploads/profiles/artist-avatar-2.png',
+      title: 'Neon Oasis',
+      description: 'A futuristic digital painting exploring the intersection of cybernetic structures and bioluminescent nature.',
+      category: 'Digital Arts',
+      imagePath: '/uploads/artworks/seeding-digital-1.png',
+      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      likes: 4,
+      likedBy: ['admin-uuid-0000-0000', 'artist-uuid-regine-santos'],
+      price: 9500
+    }
+  ]
+};
+
 // Initialize database with pre-seeded data
 export async function initDb() {
-  const defaultDb = {
-    users: [
-      {
-        id: 'admin-uuid-0000-0000',
-        username: 'admin',
-        email: 'admin@malathala.urs.edu.ph',
-        password_hash: hashPassword('AdminSecurePassword2026!'),
-        role: 'admin',
-        status: 'approved',
-        fullName: 'Malathala Administrator',
-        category: 'Administration',
-        bio: 'System Administrator for MALATHALA visual arts portal.',
-        profilePicture: '/logo.png',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'artist-uuid-regine-santos',
-        username: 'regine',
-        email: 'regine@malathala.urs.edu.ph',
-        password_hash: hashPassword('artist123'),
-        role: 'artist',
-        status: 'approved',
-        fullName: 'Regine Santos',
-        category: 'Painting',
-        bio: 'Fine arts graduate. Specializes in oil paintings depicting Philippine heritage and culture.',
-        profilePicture: '/uploads/profiles/artist-avatar-1.png',
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'artist-uuid-karl-mendoza',
-        username: 'karl',
-        email: 'karl@malathala.urs.edu.ph',
-        password_hash: hashPassword('artist123'),
-        role: 'artist',
-        status: 'approved',
-        fullName: 'Karl Mendoza',
-        category: 'Photography',
-        bio: 'Visual storyteller capturing the hidden textures and patterns of urban and rural life.',
-        profilePicture: '/uploads/profiles/artist-avatar-2.png',
-        createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString()
-      }
-    ],
-    artworks: [
-      {
-        id: 'art-uuid-painting-1',
-        userId: 'artist-uuid-regine-santos',
-        artistName: 'Regine Santos',
-        artistAvatar: '/uploads/profiles/artist-avatar-1.png',
-        title: 'Whispers of the Morong Church',
-        description: 'An oil-on-canvas painting depicting the historic St. Jerome Parish Church in Morong, Rizal, highlighted under a golden-hour sky.',
-        category: 'Painting',
-        imagePath: '/uploads/artworks/seeding-painting-1.png',
-        createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
-        likes: 2,
-        likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
-        price: 18500
-      },
-      {
-        id: 'art-uuid-photography-1',
-        userId: 'artist-uuid-karl-mendoza',
-        artistName: 'Karl Mendoza',
-        artistAvatar: '/uploads/profiles/artist-avatar-2.png',
-        title: 'Echoes of the Sierra Madre',
-        description: 'A monochrome landscape photograph capturing the morning fog rolling over the peaks of the Sierra Madre mountain range.',
-        category: 'Photography',
-        imagePath: '/uploads/artworks/seeding-photo-1.png',
-        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-        likes: 1,
-        likedBy: ['admin-uuid-0000-0000'],
-        price: null
-      },
-      {
-        id: 'art-uuid-sculpture-1',
-        userId: 'artist-uuid-regine-santos',
-        artistName: 'Regine Santos',
-        artistAvatar: '/uploads/profiles/artist-avatar-1.png',
-        title: 'Form and Flow',
-        description: 'A hand-carved mahogany sculpture capturing fluid abstract human silhouettes, reflecting human connections and family unity.',
-        category: 'Sculpture',
-        imagePath: '/uploads/artworks/seeding-sculpture-1.png',
-        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        likes: 3,
-        likedBy: ['admin-uuid-0000-0000', 'artist-uuid-karl-mendoza'],
-        price: 32000
-      },
-      {
-        id: 'art-uuid-digital-1',
-        userId: 'artist-uuid-karl-mendoza',
-        artistName: 'Karl Mendoza',
-        artistAvatar: '/uploads/profiles/artist-avatar-2.png',
-        title: 'Neon Oasis',
-        description: 'A futuristic digital painting exploring the intersection of cybernetic structures and bioluminescent nature.',
-        category: 'Digital Arts',
-        imagePath: '/uploads/artworks/seeding-digital-1.png',
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        likes: 4,
-        likedBy: ['admin-uuid-0000-0000', 'artist-uuid-regine-santos'],
-        price: 9500
-      }
-    ]
-  };
-
   // 1. Try Supabase Init
   if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
     try {
       const data = await getFromSupabase();
-      if (!data) {
+      if (!data || !data.users || !Array.isArray(data.users) || !data.artworks || !Array.isArray(data.artworks)) {
         await setInSupabase(defaultDb);
         console.log('Database initialized in Supabase with seed data.');
       } else {
@@ -252,7 +252,7 @@ export async function initDb() {
     try {
       const { kv } = require('@vercel/kv');
       const data = await kv.get('malathala_db');
-      if (!data) {
+      if (!data || !data.users || !Array.isArray(data.users) || !data.artworks || !Array.isArray(data.artworks)) {
         await kv.set('malathala_db', defaultDb);
         console.log('Database initialized in Vercel KV with seed data.');
       } else {
@@ -293,37 +293,49 @@ export async function initDb() {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2), 'utf8');
-    console.log('Database initialized with local files and seed data.');
-  } else {
-    const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-    let modified = false;
-
-    if (!data.users.find(u => u.username === 'admin')) {
-      data.users.push(defaultDb.users[0]);
-      modified = true;
-    }
-    if (!data.users.find(u => u.username === 'regine')) {
-      data.users.push(defaultDb.users[1]);
-      modified = true;
-    }
-    if (!data.users.find(u => u.username === 'karl')) {
-      data.users.push(defaultDb.users[2]);
-      modified = true;
-    }
-    
-    defaultDb.artworks.forEach(seedArt => {
-      if (!data.artworks.some(art => art.id === seedArt.id)) {
-        data.artworks.push(seedArt);
-        modified = true;
+  let data;
+  try {
+    if (!fs.existsSync(DB_PATH)) {
+      fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2), 'utf8');
+      data = defaultDb;
+      console.log('Database initialized with local files and seed data.');
+    } else {
+      const content = fs.readFileSync(DB_PATH, 'utf8');
+      data = JSON.parse(content);
+      if (!data || !data.users || !Array.isArray(data.users) || !data.artworks || !Array.isArray(data.artworks)) {
+        fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2), 'utf8');
+        data = defaultDb;
       }
-    });
-
-    if (modified) {
-      fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
-      console.log('Seed users/artworks validated and merged into existing local database.');
     }
+  } catch (err) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2), 'utf8');
+    data = defaultDb;
+  }
+
+  let modified = false;
+  if (!data.users.find(u => u.username === 'admin')) {
+    data.users.push(defaultDb.users[0]);
+    modified = true;
+  }
+  if (!data.users.find(u => u.username === 'regine')) {
+    data.users.push(defaultDb.users[1]);
+    modified = true;
+  }
+  if (!data.users.find(u => u.username === 'karl')) {
+    data.users.push(defaultDb.users[2]);
+    modified = true;
+  }
+  
+  defaultDb.artworks.forEach(seedArt => {
+    if (!data.artworks.some(art => art.id === seedArt.id)) {
+      data.artworks.push(seedArt);
+      modified = true;
+    }
+  });
+
+  if (modified) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    console.log('Seed users/artworks validated and merged into existing local database.');
   }
 }
 
@@ -334,7 +346,9 @@ async function readDb() {
   // 1. Try Supabase
   if (process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
     const data = await getFromSupabase();
-    if (data) return data;
+    if (data && data.users && Array.isArray(data.users) && data.artworks && Array.isArray(data.artworks)) {
+      return data;
+    }
   }
 
   // 2. Try Vercel KV
@@ -342,7 +356,9 @@ async function readDb() {
     try {
       const { kv } = require('@vercel/kv');
       const data = await kv.get('malathala_db');
-      return data || { users: [], artworks: [] };
+      if (data && data.users && Array.isArray(data.users) && data.artworks && Array.isArray(data.artworks)) {
+        return data;
+      }
     } catch (err) {
       console.error('Failed to read from KV:', err.message);
     }

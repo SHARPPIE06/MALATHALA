@@ -121,7 +121,7 @@ export default function AdminClient() {
         const data = await res.json();
         if (data.autoLogin) {
           alert('Account approved! Logging in and redirecting to the artist profile dashboard.');
-          window.location.href = '/profile';
+          window.location.assign('/profile');
           return;
         }
         // Update user status in local state

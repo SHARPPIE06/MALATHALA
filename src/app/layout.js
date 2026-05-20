@@ -23,8 +23,9 @@ export default async function RootLayout({ children }) {
     const token = cookieStore.get('malathala_session')?.value;
     if (token) {
       session = decryptSession(token);
-      // Validate expiration
-      if (session && session.expiresAt && Date.now() > session.expiresAt) {
+      // Validate expiration - compute timestamp before render
+      const now = new Date().getTime();
+      if (session && session.expiresAt && now > session.expiresAt) {
         session = null;
       }
     }

@@ -125,7 +125,7 @@ function LoginFormContent() {
       </form>
 
       <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '14px', color: 'var(--text-secondary)' }}>
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/register" style={{ color: 'var(--color-gold)', fontWeight: '500' }}>
           Apply as Artist
         </Link>
