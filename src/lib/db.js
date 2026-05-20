@@ -201,7 +201,8 @@ const defaultDb = {
       likedBy: ['admin-uuid-0000-0000', 'artist-uuid-regine-santos'],
       price: 9500
     }
-  ]
+  ],
+  banned_ips: []
 };
 
 // Initialize database with pre-seeded data
@@ -351,6 +352,11 @@ export async function initDb() {
     }
   });
 
+  if (!data.banned_ips || !Array.isArray(data.banned_ips)) {
+    data.banned_ips = [];
+    modified = true;
+  }
+
   if (modified) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
     console.log('Seed users/artworks validated and merged into existing local database.');
@@ -453,6 +459,7 @@ export async function createUser(userData) {
     bio: userData.bio || '',
     profilePicture: userData.profilePicture || '/default-profile.png',
     verificationCode: userData.verificationCode || null,
+    ip_address: userData.ip_address || null,
     createdAt: new Date().toISOString()
   };
 
@@ -521,6 +528,57 @@ export async function updateUserProfile(userId, profileData) {
 
   await writeDb(db);
   return user;
+}
+
+export async function deleteUser(userId) {
+  const db = await readDb();
+  const userIndex = db.users.findIndex(u => u.id === userId);
+  if (userIndex === -1) return false;
+
+  // Remove the user's artworks
+  const userArtworks = db.artworks.filter(art => art.userId === userId);
+  for (const artwork of userArtworks) {
+    if (artwork.imagePath && artwork.imagePath.startsWith('/uploads/')) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const absolutePath = path.join(process.cwd(), 'public', artwork.imagePath);
+        if (fs.existsSync(absolutePath)) {
+          fs.unlinkSync(absolutePath);
+        }
+      } catch (e) {
+        console.error('Failed to delete user artwork file:', e.message);
+      }
+    }
+  }
+
+  // Remove artworks from DB
+  db.artworks = db.artworks.filter(art => art.userId !== userId);
+  
+  // Remove user from DB
+  db.users.splice(userIndex, 1);
+  await writeDb(db);
+  return true;
+}
+
+export async function isIpBanned(ip) {
+  if (!ip) return false;
+  const db = await readDb();
+  if (!db.banned_ips) return false;
+  return db.banned_ips.includes(ip);
+}
+
+export async function banIp(ip) {
+  if (!ip) return false;
+  const db = await readDb();
+  if (!db.banned_ips) {
+    db.banned_ips = [];
+  }
+  if (!db.banned_ips.includes(ip)) {
+    db.banned_ips.push(ip);
+    await writeDb(db);
+  }
+  return true;
 }
 
 // --- ARTWORK OPERATIONS ---

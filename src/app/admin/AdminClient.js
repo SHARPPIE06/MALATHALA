@@ -138,7 +138,37 @@ export default function AdminClient() {
     } finally {
       setActionLoading(prev => ({ ...prev, [userId]: false }));
     }
-  };  // Handle role update (promoting/demoting admins)
+  };
+
+  // Handle delete user
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this user and all their artworks? This action cannot be undone.')) {
+      return;
+    }
+
+    if (actionLoading[userId]) return;
+    setActionLoading(prev => ({ ...prev, [userId]: true }));
+
+    try {
+      const res = await fetch(`/api/admin/users?userId=${userId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete user.');
+      }
+    } catch (err) {
+      console.error('Delete user error:', err);
+      alert('An error occurred while deleting the user.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  // Handle role update (promoting/demoting admins)
   const handleRoleChange = async (userId, newRole) => {
     if (actionLoading[userId]) return;
 
@@ -311,9 +341,21 @@ export default function AdminClient() {
                             <button
                               onClick={() => handleStatusChange(u.id, 'declined')}
                               disabled={actionLoading[u.id]}
-                              className="btn btn-danger btn-small"
+                              className="btn btn-secondary btn-small"
+                              style={{ background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-muted)', fontSize: '11px', marginRight: '6px' }}
                             >
                               Decline
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to decline this application AND block their IP address from registering again?')) {
+                                  handleStatusChange(u.id, 'blocked');
+                                }
+                              }}
+                              disabled={actionLoading[u.id]}
+                              className="btn btn-danger btn-small"
+                            >
+                              Block IP
                             </button>
                           </>
                         )}
@@ -339,12 +381,12 @@ export default function AdminClient() {
                               </button>
                             )}
                             <button
-                              onClick={() => handleStatusChange(u.id, 'declined')}
+                              onClick={() => handleDeleteUser(u.id)}
                               disabled={actionLoading[u.id]}
                               className="btn btn-danger btn-small"
                               style={{ background: 'transparent', border: '1px solid #E74C3C', color: '#E74C3C', fontSize: '11px' }}
                             >
-                              Block / Decline
+                              Remove
                             </button>
                           </>
                         )}

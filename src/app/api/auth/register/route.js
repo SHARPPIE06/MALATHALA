@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUser, getUserByUsername, getUserByEmail } from '@/lib/db';
+import { createUser, getUserByUsername, getUserByEmail, isIpBanned } from '@/lib/db';
 import { saveUploadedFile } from '@/lib/upload';
 
 export async function POST(request) {
@@ -17,6 +17,16 @@ export async function POST(request) {
       return NextResponse.json(
         { error: 'All fields (username, email, password, fullName, category) are required' },
         { status: 400 }
+      );
+    }
+
+    // Capture and check IP for ban list
+    const ip = request.headers.get('x-forwarded-for') || request.ip || '127.0.0.1';
+    const isBanned = await isIpBanned(ip);
+    if (isBanned) {
+      return NextResponse.json(
+        { error: 'Registration is not permitted from your location.' },
+        { status: 403 }
       );
     }
 
@@ -60,7 +70,8 @@ export async function POST(request) {
       bio,
       profilePicture: profilePictureUrl,
       role: 'artist',
-      status: 'pending'
+      status: 'pending',
+      ip_address: ip
     });
 
     // Exclude password hash from response

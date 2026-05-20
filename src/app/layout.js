@@ -54,7 +54,7 @@ export default async function RootLayout({ children }) {
               © {new Date().getFullYear()} <span className="footer-highlight">MALATHALA</span>. All Rights Reserved.
             </p>
             <p className="footer-text" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              University of Rizal System - Morong Campus • Showcase Portal for Visual Artists
+              Showcase Portal for Visual Artists
             </p>
           </div>
         </footer>
