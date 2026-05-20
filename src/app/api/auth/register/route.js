@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserByUsername, getUserByEmail, createUser } from '@/lib/db';
 import { saveUploadedFile } from '@/lib/upload';
+import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request) {
   try {
@@ -62,7 +63,10 @@ export async function POST(request) {
       }
     }
 
-    // Create user with 'pending' status
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Create user with 'email_unverified' status
     const newUser = await createUser({
       username,
       email,
@@ -72,15 +76,19 @@ export async function POST(request) {
       bio,
       profilePicture: profilePictureUrl,
       role: 'artist',
-      status: 'pending' // Artist accounts must be approved by admin
+      status: 'email_unverified',
+      verificationCode
     });
 
-    // Exclude password hash from response
-    const { password_hash, ...userResponse } = newUser;
+    // Send verification email (async, but we await for security validation confirmation)
+    await sendVerificationEmail(email, verificationCode, fullName);
+
+    // Exclude password hash and verification code from response
+    const { password_hash, verificationCode: _, ...userResponse } = newUser;
 
     return NextResponse.json(
       { 
-        message: 'Registration successful! Your account is pending administrator approval.', 
+        message: 'Registration initiated! Please verify your email with the 6-digit code sent to you.', 
         user: userResponse 
       },
       { status: 201 }

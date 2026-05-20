@@ -72,18 +72,7 @@ export default function Register() {
       const data = await res.json();
 
       if (res.ok) {
-        setSuccess('Application submitted! Please wait for admin approval before logging in.');
-        // Clear fields
-        setUsername('');
-        setEmail('');
-        setPassword('');
-        setFullName('');
-        setBio('');
-        setProfilePic(null);
-        setProfilePicPreview('/default-profile.png');
-        
-        // Scroll to top to see success alert
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        router.push(`/register/verify?email=${encodeURIComponent(email)}`);
       } else {
         setError(data.error || 'Registration failed.');
       }

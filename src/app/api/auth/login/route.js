@@ -32,6 +32,13 @@ export async function POST(request) {
 
     // Check account status
     if (user.role !== 'admin') {
+      if (user.status === 'email_unverified') {
+        return NextResponse.json(
+          { error: 'Please verify your email address first. Redirecting to verification page...', email: user.email, unverified: true },
+          { status: 403 }
+        );
+      }
+
       if (user.status === 'pending') {
         return NextResponse.json(
           { error: 'Your account is pending administrator approval. Please wait for an email or administrator notification.' },

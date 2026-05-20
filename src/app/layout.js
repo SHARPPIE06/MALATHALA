@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'MALATHALA - Visual Artist Showcase Portal',
-  description: 'A premium portfolio showcase website for visual artists at the University of Rizal System, Morong Campus.',
+  description: 'A premium portfolio showcase website for visual artists.',
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',

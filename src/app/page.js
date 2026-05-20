@@ -150,7 +150,7 @@ export default function Home() {
           <span className="gradient-text">MALATHALA</span>
         </h1>
         <p className="hero-description">
-          Discover and celebrate the rich visual arts portfolio of artists from the University of Rizal System, Morong Campus.
+          Discover and celebrate the rich visual arts portfolio of exceptional visual artists.
         </p>
 
         {/* Search Bar */}

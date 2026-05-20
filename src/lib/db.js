@@ -301,12 +301,32 @@ export async function createUser(userData) {
     category: userData.category || 'Drawing',
     bio: userData.bio || '',
     profilePicture: userData.profilePicture || '/default-profile.png',
+    verificationCode: userData.verificationCode || null,
     createdAt: new Date().toISOString()
   };
 
   db.users.push(newUser);
   await writeDb(db);
   return newUser;
+}
+
+export async function verifyUserEmail(email, code) {
+  const db = await readDb();
+  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) return { success: false, error: 'User not found' };
+  
+  if (user.status !== 'email_unverified') {
+    return { success: false, error: 'Email is already verified' };
+  }
+  
+  if (user.verificationCode !== code) {
+    return { success: false, error: 'Invalid verification code' };
+  }
+  
+  user.status = 'pending'; // Awaiting admin approval
+  user.verificationCode = null; // Clear verification code
+  await writeDb(db);
+  return { success: true };
 }
 
 export async function updateUserStatus(userId, status) {
