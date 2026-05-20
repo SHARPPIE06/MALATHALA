@@ -8,6 +8,7 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const verified = searchParams.get('verified');
+  const applied = searchParams.get('applied');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -18,8 +19,10 @@ function LoginFormContent() {
   useEffect(() => {
     if (verified === 'true') {
       setSuccess('Email successfully verified! Your account is now pending administrator approval.');
+    } else if (applied === 'true') {
+      setSuccess('Application submitted successfully! Your account is now pending administrator approval.');
     }
-  }, [verified]);
+  }, [verified, applied]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +33,7 @@ function LoginFormContent() {
 
     setLoading(true);
     setError('');
-    if (verified !== 'true') setSuccess('');
+    if (verified !== 'true' && applied !== 'true') setSuccess('');
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -53,11 +56,6 @@ function LoginFormContent() {
         }, 1000);
       } else {
         setError(data.error || 'Invalid credentials');
-        if (data.unverified && data.email) {
-          setTimeout(() => {
-            router.push(`/register/verify?email=${encodeURIComponent(data.email)}`);
-          }, 2500);
-        }
       }
     } catch (err) {
       console.error('Login submit error:', err);

@@ -63,10 +63,7 @@ export async function POST(request) {
       }
     }
 
-    // Generate 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Create user with 'email_unverified' status
+    // Create user with 'pending' status immediately
     const newUser = await createUser({
       username,
       email,
@@ -76,26 +73,19 @@ export async function POST(request) {
       bio,
       profilePicture: profilePictureUrl,
       role: 'artist',
-      status: 'email_unverified',
-      verificationCode
+      status: 'pending'
     });
 
-    // Send verification email
-    const emailSent = await sendVerificationEmail(email, verificationCode, fullName);
+    // Exclude password hash from response
+    const { password_hash, ...userResponse } = newUser;
 
-    // Exclude password hash and verification code from response
-    const { password_hash, verificationCode: _, ...userResponse } = newUser;
-
-    const responseData = { 
-      message: 'Registration initiated! Please verify your email with the 6-digit code sent to you.', 
-      user: userResponse 
-    };
-
-    if (!emailSent) {
-      responseData.debugCode = verificationCode;
-    }
-
-    return NextResponse.json(responseData, { status: 201 });
+    return NextResponse.json(
+      { 
+        message: 'Registration successful! Your application is now pending administrator approval.', 
+        user: userResponse 
+      },
+      { status: 201 }
+    );
 
   } catch (error) {
     console.error('Registration API error:', error);
